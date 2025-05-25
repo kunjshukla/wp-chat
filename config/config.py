@@ -1,3 +1,5 @@
+import os
+
 # Gemini API Configuration
 GEMINI_API_KEY = "AIzaSyDoBJCMwWDixx6RCrCj-J5fvKru6JSWtxo"  # Replace with your actual Gemini API key
 

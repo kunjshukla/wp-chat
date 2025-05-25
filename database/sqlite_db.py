@@ -22,23 +22,23 @@ def setup_sqlite_database():
         """)
         table_exists = cursor.fetchone() is not None
         
-        # Define the required columns
+        # Define the required columns (aligned with main.go schema)
         required_columns = {
-            'id': 'INTEGER PRIMARY KEY AUTOINCREMENT',
+            'id': 'TEXT',
+            'chat_jid': 'TEXT',
             'sender': 'TEXT NOT NULL',
             'content': 'TEXT NOT NULL',
-            'jid': 'TEXT',
             'timestamp': 'TEXT',
-            'chat_jid': 'TEXT',
             'is_from_me': 'BOOLEAN',
-            'processed': 'BOOLEAN DEFAULT 0'
+            'media_type': 'TEXT',  # Always 'text' from main.go
+            'processed': 'BOOLEAN DEFAULT 0'  # Added by our script
         }
         
         if not table_exists:
             # Create messages table with all required columns
             columns_def = ', '.join([f"{col} {col_type}" for col, col_type in required_columns.items()])
             cursor.execute(f"""
-            CREATE TABLE messages ({columns_def})
+            CREATE TABLE messages ({columns_def}, PRIMARY KEY (id, chat_jid))
             """)
             print("Created messages table with all required columns")
         else:
@@ -64,7 +64,7 @@ def setup_sqlite_database():
                 cursor.execute("ALTER TABLE messages RENAME TO messages_backup")
                 columns_def = ', '.join([f"{col} {col_type}" for col, col_type in required_columns.items()])
                 cursor.execute(f"""
-                CREATE TABLE messages ({columns_def})
+                CREATE TABLE messages ({columns_def}, PRIMARY KEY (id, chat_jid))
                 """)
                 common_columns = [col for col in existing_columns if col in required_columns]
                 if common_columns:

@@ -39,7 +39,7 @@ def monitor_whatsapp_messages():
             cursor = conn.cursor()
             
             query = """
-            SELECT id, sender, content, jid, timestamp, chat_jid, is_from_me
+            SELECT id, sender, content, chat_jid, timestamp, is_from_me, media_type
             FROM messages
             WHERE processed = 0
             ORDER BY timestamp ASC
@@ -50,18 +50,18 @@ def monitor_whatsapp_messages():
             if new_messages:
                 print(f"Found {len(new_messages)} new messages")
                 for msg in new_messages:
-                    msg_id, sender, content, jid, timestamp, chat_jid, is_from_me = msg
+                    msg_id, sender, content, chat_jid, timestamp, is_from_me, media_type = msg
                     try:
-                        print(f"Processing message from {sender}: {content[:100]}... (is_from_me: {is_from_me})")
+                        print(f"Processing message from {sender}: {content[:100]}... (is_from_me: {is_from_me}, media_type: {media_type})")
                         if not timestamp:
                             timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                         bot_response, transactions = process_message(content)
-                        store_message(mysql_conn, timestamp, sender, content, bot_response, chat_jid)
+                        store_message(mysql_conn, timestamp.strftime('%Y-%m-%d %H:%M:%S'), sender, content, bot_response, chat_jid)
                         if transactions:
                             store_transactions(mysql_conn, timestamp, sender, transactions)
-                        if jid:
-                            send_response(jid, bot_response)
-                        cursor.execute("UPDATE messages SET processed = 1 WHERE id = ?", (msg_id,))
+                        if chat_jid:  # Use chat_jid instead of jid
+                            send_response(chat_jid, bot_response)
+                        cursor.execute("UPDATE messages SET processed = 1 WHERE id = ? AND chat_jid = ?", (msg_id, chat_jid))
                         conn.commit()
                     except Exception as e:
                         print(f"Error processing message: {e}")
